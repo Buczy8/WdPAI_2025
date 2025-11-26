@@ -1,100 +1,78 @@
 <?php
 
-require_once 'src/controllers/AppController.php';
+require_once 'AppController.php';
+require_once __DIR__.'/../repository/UserRepository.php';
 
-class SecurityController extends AppController
-{
+class SecurityController extends AppController {
+    private $userRepository;
 
-    // ======= LOKALNA "BAZA" UŻYTKOWNIKÓW =======
-    private static array $users = [
-        [
-            'email' => 'anna@example.com',
-            'password' => '$2y$10$cN7kSRFIJH7Kv0bSETvXUuHD0bosz79g0177DOhsI8CjG6HJa7Af2', // test123
-            'first_name' => 'Anna'
-        ],
-        [
-            'email' => 'bartek@example.com',
-            'password' => '$2y$10$fK9rLobZK2C6rJq6B/9I6u6Udaez9CaRu7eC/0zT3pGq5piVDsElW', // haslo456
-            'first_name' => 'Bartek'
-        ],
-        [
-            'email' => 'celina@example.com',
-            'password' => '$2y$10$Cq1J6YMGzRKR6XzTb3fDF.6sC6CShm8kFgEv7jJdtyWkhC1GuazJa', // qwerty
-            'first_name' => 'Celina'
-        ],
-    ];
-
-    public function login()
-    {
-        // TODO dekorator, który definiuje, jakie metody HTTP są dostępne
-        if ($this->isGet()) {
-            return $this->render('login');
-        }
-
-        $email = $_POST['email'] ?? '';
-        $password = $_POST['password'] ?? '';
-
-        if (empty($email) || empty($password)) {
-            return $this->render('login', ['messages' => ['Fill all fields']]);
-        }
-        //TODO replace with search from database
-        $userRow = null;
-        foreach (self::$users as $u) {
-            if (strcasecmp($u['email'], $email) === 0) {
-                $userRow = $u;
-                break;
-            }
-        }
-
-        if (!$userRow) {
-            return $this->render('login', ['messages' => ['User not found']]);
-        }
-
-        if (!password_verify($password, $userRow['password'])) {
-            return $this->render('login', ['messages' => ['Wrong password']]);
-        }
-
-        // TODO możemy przechowywać sesje użytkowika lub token
-        // setcookie("username", $userRow['email'], time() + 3600, '/');
-
-        $url = "http://$_SERVER[HTTP_HOST]";
-        header("Location: {$url}/dashboard");
+    public function __construct() {
+        $this->userRepository = new UserRepository();
     }
 
+    // TODO dekarator, który definiuje, jakie metody HTTP są dostępne
+    public function login() {
 
-    public function register()
-    {
-        if (!$this->isPost()) {
-            return $this->render('register');
+        if($this->isGet()) {
+            return $this->render("login");
         }
 
-        $email = trim($_POST['email'] ?? '');
-        $password1 = $_POST['password1'] ?? '';
-        $password2 = $_POST['password2'] ?? '';
-        $firstName = $_POST['first-name'] ?? '';
-        $lastName = $_POST['last-name'] ?? '';
+        $email = $_POST["email"] ?? '';
+        $password = $_POST["password"] ?? '';
 
-        if (empty($email) || empty($password1) || empty($firstName) ||  empty($password2) || empty($lastName)) {
+        if(empty($email) || empty($password)) {
+            return $this->render("login", ["message" => "Fill all fields"]);
+        }
+
+        $user = $this->userRepository->getUserByEmail($email);
+
+        if(!$user){
+            return $this->render("login", ["message" => "User not found"]);
+
+        }
+       if(!password_verify($password, $user['password'])){
+           return $this->render("login", ["message" => "Wrong password"]);
+       }
+
+       // TODO create user session / cookie
+
+        return $this->render("dashboard");
+    }
+
+    public function register() {
+        // TODO pobranie z formularza email i hasła
+        // TODO insert do bazy danych
+        // TODO zwrocenie informajci o pomyslnym zarejstrowaniu
+
+        if ($this->isGet()) {
+            return $this->render("register");
+        }
+
+        $email = $_POST["email"] ?? '';
+        $password1 = $_POST["password1"] ?? '';
+        $password2 = $_POST["password2"] ?? '';
+        $firstname = $_POST["firstname"] ?? '';
+        $lastname = $_POST["lastname"] ?? '';
+
+        if (empty($email) || empty($password1) || empty($firstname) ||  empty($password2) || empty($lastname)) {
             return $this->render('register', ['messages' => ['Fill all fields']]);
         }
 
-        // TODO this will be checked in database
-        foreach (self::$users as $u) {
-            if (strcasecmp($u['email'], $email) === 0) {
-                return $this->render('register', ['messages' => ['Email is taken']]);
-            }
+        if ($password1 !== $password2) {
+            return $this->render('register', ['messages' => ['Passwords should be the same!']]);
         }
+
+        // TODO check if user with this email already exists
 
         $hashedPassword = password_hash($password1, PASSWORD_BCRYPT);
 
-        self::$users[] = [
-            'email' => $email,
-            'password' => $hashedPassword,
-            'first_name' => $firstName
-        ];
+        $this->userRepository->createUser(
+            $email,
+            $hashedPassword,
+            $firstname,
+            $lastname
+        );
 
-        $url = "http://$_SERVER[HTTP_HOST]";
-        header("Location: {$url}/login");
+        return $this->render("login", ["message" => "Zarejestrowano uytkownika ".$email]);
     }
-
 }
