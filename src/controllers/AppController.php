@@ -1,7 +1,8 @@
 <?php
-
-class AppController
+require_once 'src/patterns/Singleton.php';
+class AppController extends Singleton
 {
+
     protected function isGet(): bool
     {
         return $_SERVER["REQUEST_METHOD"] === 'GET';

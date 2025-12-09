@@ -7,6 +7,7 @@ class SecurityController extends AppController {
     private $userRepository;
 
     public function __construct() {
+        parent::__construct();
         $this->userRepository = new UserRepository();
     }
 
@@ -34,15 +35,17 @@ class SecurityController extends AppController {
            return $this->render("login", ["message" => "Wrong password"]);
        }
 
-       // TODO create user session / cookie
+        session_start();
+        session_regenerate_id(true);
 
-        return $this->render("dashboard");
+        $_SESSION['user_id'] = $user['id'];
+        $_SESSION['user_email'] = $user['email'];
+
+        $url = "http://$_SERVER[HTTP_HOST]";
+        header("Location: {$url}/dashboard");
     }
 
     public function register() {
-        // TODO pobranie z formularza email i hasła
-        // TODO insert do bazy danych
-        // TODO zwrocenie informajci o pomyslnym zarejstrowaniu
 
         if ($this->isGet()) {
             return $this->render("register");
@@ -62,7 +65,11 @@ class SecurityController extends AppController {
             return $this->render('register', ['messages' => ['Passwords should be the same!']]);
         }
 
-        // TODO check if user with this email already exists
+        $existingUser = $this->userRepository->getUserByEmail($email);
+
+        if ($existingUser) {
+            return $this->render('register', ['messages' => ['User with this email already exists!']]);
+        }
 
         $hashedPassword = password_hash($password1, PASSWORD_BCRYPT);
 

@@ -18,22 +18,38 @@ class Routing
             'controller' => 'DashboardController',
             'action' => 'index'
         ],
+        'search-cards' => [
+            'controller' => 'DashboardController',
+            'action' => 'search'
+        ]
     ];
-
+    private static $instances = [];
     public static function run(string $path)
     {
-        switch ($path) {
-            case 'dashboard':
-            case 'login':
-            case 'register':
-                $controller = Routing::$routes[$path]['controller'];
-                $action = Routing::$routes[$path]['action'];
-                $controllerObj = new $controller;
-                $controllerObj->$action();
-                break;
-            default:
-                include 'public/views/404.html';
-                break;
+        if (array_key_exists($path, self::$routes)) {
+            $controllerName = self::$routes[$path]['controller'];
+            $action = self::$routes[$path]['action'];
+
+            $object = self::getControllerInstance($controllerName);
+            $object->$action();
+            return;
         }
+        if (preg_match('#^card-details/([0-9]+)$#', $path, $matches)) {
+
+            $id = $matches[1];
+
+            $object = self::getControllerInstance('DashboardController');
+
+            $object->details($id);
+
+            return;
+        }
+        include 'public/views/404.html';
+    }
+    private static function getControllerInstance($controllerName) {
+        if (!isset(self::$instances[$controllerName])) {
+            self::$instances[$controllerName] = new $controllerName();
+        }
+        return self::$instances[$controllerName];
     }
 }

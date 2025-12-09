@@ -28,12 +28,14 @@
     </aside>
     <main>
         <h1>CARDS</h1>
-        <!-- TODO display list of cards -->
         <ul>
-            <?php foreach($cards as $key=>$value): ?>
+            <?php foreach($cards as $key => $value): ?>
             <li>
-                <?php echo $value['title']; ?>
-                <img src="<?= $value['imageUrlPath']; ?>">
+                <h3><?= $value['title']; ?></h3>
+
+                <img src="<?= $value['image']; ?>" alt="<?= $value['title']; ?>">
+
+                <p><?= $value['description']; ?></p>
             </li>
             <?php endforeach; ?>
         </ul>
