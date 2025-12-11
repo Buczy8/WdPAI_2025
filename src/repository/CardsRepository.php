@@ -21,13 +21,47 @@ class CardsRepository extends Repository
         $result = [];
 
         $stmt = $this->database->connect()->prepare('
-            SELECT * FROM cards
-        ');
-
+        SELECT * FROM cards
+    ');
         $stmt->execute();
 
+        // Pobieramy surowe dane
         $cards = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        return $cards;
+        // Przepakowujemy je na obiekty
+        foreach ($cards as $card) {
+            $result[] = new Card(
+                $card['title'],
+                $card['description'],
+                $card['image'],
+                $card['id'] // Zakładam, że w konstruktorze Card id jest ostatnie (jak w Twoim getCard)
+            );
+        }
+
+        // Zwracamy tablicę OBIEKTÓW
+        return $result;
     }
+    public function getCard(int $id): ?Card
+    {
+        $stmt = $this->database->connect()->prepare('
+        SELECT * FROM cards WHERE id = :id
+    ');
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+        $stmt->execute();
+
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$row) {
+            return null;
+        }
+
+        return new Card(
+            $row['title'],
+            $row['description'],
+            $row['image'],
+            $row['id']
+        );
+    }
+
+
 }

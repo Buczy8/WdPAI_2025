@@ -23,7 +23,7 @@ services:
     networks:
       - pg-network
     volumes:
-      - ./docker/db/init:/docker-entrypoint-initdb.d
+      - pg-data:/var/lib/postgresql
 
   php:
     build:
@@ -34,16 +34,16 @@ services:
     networks:
       - pg-network
 
-  pgadmin-wdpai:
-    image: dpage/pgadmin4:latest
-    container_name: pg-admin2
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@example.com
-      PGADMIN_DEFAULT_PASSWORD: admin
-    ports:
-      - "5050:80"
-    networks:
-      - pg-network
+#  pgadmin-wdpai:
+#    image: dpage/pgadmin4:latest
+#    container_name: pg-admin2
+#    environment:
+#      PGADMIN_DEFAULT_EMAIL: admin@example.com
+#      PGADMIN_DEFAULT_PASSWORD: admin
+#    ports:
+#      - "5050:80"
+#    networks:
+#      - pg-network
 
 networks:
   pg-network:

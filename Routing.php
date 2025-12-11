@@ -2,7 +2,8 @@
 
 require_once 'src/controllers/SecurityController.php';
 require_once 'src/controllers/DashboardController.php';
-
+require_once 'src/middleware/checkRequestAllowed.php';
+require_once 'src/middleware/checkAuthRequirements.php';
 class Routing
 {
     public static $routes = [
@@ -21,7 +22,11 @@ class Routing
         'search-cards' => [
             'controller' => 'DashboardController',
             'action' => 'search'
-        ]
+        ],
+        'logout' => [
+            'controller' => 'SecurityController',
+            'action' => 'logout'
+        ],
     ];
     private static $instances = [];
     public static function run(string $path)
@@ -31,6 +36,10 @@ class Routing
             $action = self::$routes[$path]['action'];
 
             $object = self::getControllerInstance($controllerName);
+
+            checkRequestAllowed($object, $action);
+            checkAuthRequirements($object, $action);
+
             $object->$action();
             return;
         }

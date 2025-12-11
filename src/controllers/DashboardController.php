@@ -8,27 +8,22 @@ class DashboardController extends AppController {
     private $cardsRepository;
     public function __construct()
     {
+        parent::__construct();
         $this->cardsRepository = new CardsRepository();
     }
+    #[RequireLogin]
     public function index(){
-        session_start();
-        if (!isset($_SESSION['user_id'])) {
-            header("Location: /login");
-            exit;
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
         }
-        $userRepository = new UserRepository();
-        $users = $userRepository->getUser();
-        $cards = $this->cardsRepository->getCards();
-        var_dump($users);
-
-        $this->render('dashboard', ['cards' => $cards]);
+        $this->render('dashboard');
     }
 
     public function search()
     {
         $contentType = isset($_SERVER["CONTENT_TYPE"]) ? trim($_SERVER["CONTENT_TYPE"]) : '';
 
-        if($contentType() !== 'application/json'){
+        if($contentType !== 'application/json'){
             echo json_encode(['message' => 'it is not endpoit for this method']);
             return;
         }

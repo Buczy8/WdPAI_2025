@@ -2,7 +2,7 @@
 
 require_once 'AppController.php';
 require_once __DIR__.'/../repository/UserRepository.php';
-
+require_once __DIR__ . '/../annotation/AllowedMethods.php';
 class SecurityController extends AppController {
     private $userRepository;
 
@@ -11,7 +11,7 @@ class SecurityController extends AppController {
         $this->userRepository = new UserRepository();
     }
 
-    // TODO dekarator, który definiuje, jakie metody HTTP są dostępne
+    #[AllowedMethods(['POST', 'GET'])]
     public function login() {
 
         if($this->isGet()) {
@@ -35,16 +35,13 @@ class SecurityController extends AppController {
            return $this->render("login", ["message" => "Wrong password"]);
        }
 
-        session_start();
-        session_regenerate_id(true);
-
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['user_email'] = $user['email'];
 
         $url = "http://$_SERVER[HTTP_HOST]";
         header("Location: {$url}/dashboard");
     }
-
+    #[AllowedMethods(['POST', 'GET'])]
     public function register() {
 
         if ($this->isGet()) {
@@ -81,5 +78,37 @@ class SecurityController extends AppController {
         );
 
         return $this->render("login", ["message" => "Zarejestrowano uytkownika ".$email]);
+    }
+
+    public function logout()
+    {
+        // upewniamy się, że sesja jest uruchomiona
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        // czyścimy wszystkie dane sesji
+        $_SESSION = [];
+
+        // opcjonalnie, kasujemy ciasteczko sesji po stronie przeglądarki
+        if (ini_get("session.use_cookies")) {
+            $params = session_get_cookie_params();
+            setcookie(
+                session_name(),
+                '',
+                time() - 42000,
+                $params["path"],
+                $params["domain"],
+                $params["secure"],
+                $params["httponly"]
+            );
+        }
+
+        // niszczymy sesję
+        session_destroy();
+
+        // przekierowanie np. na ekran logowania
+        $url = "http://$_SERVER[HTTP_HOST]";
+        header("Location: {$url}/login");
     }
 }
